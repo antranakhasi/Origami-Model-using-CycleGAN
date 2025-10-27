@@ -7,6 +7,43 @@ import matplotlib.pyplot as plt
 
 # CONFIG
 IMG_SIZE = 512 # change to 256 for quick testing
+LEARNING_RATE = None
+
+CONTENT_LAYERS = None
+STYLE_LAYERS = None
+
+CONTENT_WEIGHT = None
+STYLE_WEIGHT = None
+NUM_STEPS = None
+
+LAYER_INDICES = {
+    'conv1_1': '0',
+    'conv1_2': '2',
+    'conv2_1': '5',
+    'conv2_2': '7',
+    'conv3_1': '10',
+    'conv3_2': '12',
+    'conv3_3': '14',
+    'conv3_4': '16',
+    'conv4_1': '19',
+    'conv4_2': '21',
+    'conv4_3': '23',
+    'conv4_4': '25',
+    'conv5_1': '28',
+    'conv5_2': '30',
+    'conv5_3': '32',
+    'conv5_4': '34'
+}
+
+LAYER_CONFIGS = {
+    'gatys': {
+        'content': ['conv4_2'],
+        'style': ['conv1_1', 'conv2_1', 'conv3_1', 'conv4_1', 'conv5_1']
+    }
+}
+
+# select active layer config to change layers for feature extraction
+ACTIVE_LAYER_CONFIG = "gatys" 
 
 # load pre-trained model and get weights
 vgg = vgg19(pretrained=True).features
@@ -49,6 +86,30 @@ def tensor_to_img(tensor):
     return img
 
 # feature extration 
+
+def extract_features(tensor_img, layers, model=vgg):
+
+    x = tensor_img
+    
+    # dict for layer name -> index
+    layers_to_extract = {LAYER_INDICES[layer]: layer for layer in layers}
+
+    for index, layer in model._modules.items():
+        x = layer(x)
+        
+        if index in layers_to_extract:
+            features[layers_to_extract[index]] = x
+    
+        # initializing features dictionary
+        features={}
+
+    return features
+    
+def gram_matrix(tensor_img):
+    batch, channels, height, width = tensor.size()
+    tensor = tensor.view(channels, height * width)
+    gram = torch.mm(tensor, tensor.t())
+    return gram
 
 # gram matrix to capture style
 
