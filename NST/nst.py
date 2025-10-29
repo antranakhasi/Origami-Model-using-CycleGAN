@@ -5,6 +5,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import torch.optim as optim
 import time
+import os
 
 
 # CONFIG
@@ -109,7 +110,42 @@ def extract_features(img_tensor, layers, model=vgg):
             features[layers_to_extract[index]] = x    
             
     return features
+
+def save_layer(layer_tensor, layer_path, max_channels=16):
+    # normalize output
+    features = layer_tensor.squeeze(0).cpu().detach()
+    num_channels = min(features.shape[0], max_channels)
+
+    fig, axes = plt.subplots(1, num_channels, figsize=(num_channels*2, 2))
+    if num_channels == 1:
+        axes = [axes]
     
+    for ch in range(num_channels):
+        feature_map = features[ch]
+        
+        # Normalize to [0, 1]
+        feature_map = (feature_map - feature_map.min()) / (feature_map.max() - feature_map.min() + 1e-8)
+        
+        axes[ch].imshow(feature_map, cmap='viridis')
+        axes[ch].axis('off')
+        axes[ch].set_title(f'Ch {ch}', fontsize=8)
+    
+    plt.tight_layout()
+    plt.savefig(layer_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    
+def save_all_layers(img_tensor, result_dir, img_type, model=vgg):
+    os.makedirs(result_dir, exist_ok=True)
+
+    # get list of all layers
+    layers_list = list(LAYER_INDICES.keys())
+    features = extract_features(img_tensor, layers_list)
+
+    for layer in layers_list:
+        layer_path = os.path.join(result_dir, f"{img_type}_{layer}.png")
+        save_layer(features[layer],layer_path)
+    
+    return None
 
 # gram matrix to capture style
 def gram_matrix(img_tensor):
@@ -118,6 +154,7 @@ def gram_matrix(img_tensor):
     img_tensor = img_tensor.view(channels, height * width)
     gram = torch.mm(img_tensor, img_tensor.t())
     return gram
+
 
 
 # style transfer
@@ -211,7 +248,7 @@ def nst(content_path, style_path, output_path=None,
     
     return result
 
-# running the whole thing: 
+# for standalone testing
 if __name__ == "__main__":
 
     content_path = "./test_imgs/cat.jpg"
