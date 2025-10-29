@@ -134,7 +134,7 @@ def save_layer(layer_tensor, layer_path, max_channels=16):
     plt.savefig(layer_path, dpi=150, bbox_inches='tight')
     plt.close()
     
-def save_all_layers(img_tensor, img_type, output_dir, model=vgg):
+def save_all_layers(img_tensor, img_type, obj_name, output_dir, model=vgg):
     os.makedirs(output_dir, exist_ok=True)
 
     # get list of all layers
@@ -142,7 +142,7 @@ def save_all_layers(img_tensor, img_type, output_dir, model=vgg):
     features = extract_features(img_tensor, layers_list)
 
     for layer in layers_list:
-        layer_path = os.path.join(output_dir, f"{img_type}_{layer}.png")
+        layer_path = os.path.join(output_dir, f"{obj_name}_{img_type}_{layer}.png")
         save_layer(features[layer],layer_path)
     
     return None
@@ -206,6 +206,7 @@ def nst(content_path, style_path, obj_name, output_path=None,
     }
 
     if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
             log_file = os.path.join(output_dir, f'training_log_{obj_name}.txt')
             with open(log_file, 'w') as f:
                 f.write(f"NST training log\n")
@@ -275,7 +276,7 @@ def nst(content_path, style_path, obj_name, output_path=None,
             # Save image
             if output_dir:
                 intm_img = tensor_to_img(result)
-                intm_path = os.path.join(output_dir, f'step_{step:04d}.png')
+                intm_path = os.path.join(output_dir, f'{obj_name}_step_{step:04d}.png')
                 intm_img.save(intm_path)
                 
                 # Append to log file
@@ -291,7 +292,7 @@ def nst(content_path, style_path, obj_name, output_path=None,
 
     final_img = tensor_to_img(result)
     if output_dir:
-        final_path = os.path.join(output_dir, 'final.png')
+        final_path = os.path.join(output_dir, f'{obj_name}_final.png')
         final_img.save(final_path)
         print(f"saved final result in {final_path}")
         
@@ -337,7 +338,7 @@ if __name__ == "__main__":
 
     content_path = "./test_imgs/cat.jpg"
     style_path = "./test_imgs/rose.jpg"
-    output_path = "./results/"
+    output_path = "./results"
     obj_name = "cat"
 
     org_img = Image.open(content_path)
