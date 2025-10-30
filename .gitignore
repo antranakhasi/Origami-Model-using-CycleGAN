@@ -9,6 +9,8 @@ CycleGAN/data/
 CycleGAN/__pycache__/
 CycleGAN/.ipynb_checkpoints/
 CycleGAN/results/
+NST/results
+NST/layers
 
 # Python cache
 __pycache__/
