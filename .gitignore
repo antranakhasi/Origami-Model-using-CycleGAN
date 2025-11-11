@@ -4,7 +4,8 @@ venv/
 #to be removed when data is completed pre-processed
 Data/original data
 Data/original data zip
-Data/dataset/
+Data/animals_balanced
+Data/origami_images
 
 #CycleGAN 
 CycleGAN/data/
