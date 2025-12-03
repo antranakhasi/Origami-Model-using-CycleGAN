@@ -23,7 +23,7 @@ def residual_block(x, filters):
 # ===========================
 # Generator: ResNet-style (CycleGAN)
 # ===========================
-def build_generator(image_size=256, channels=3, n_blocks=9):
+def build_generator(image_size=256, channels=4, n_blocks=9):
     inputs = layers.Input(shape=(image_size, image_size, channels))
 
     # Downsampling
