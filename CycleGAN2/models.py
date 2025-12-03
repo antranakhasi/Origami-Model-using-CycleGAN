@@ -1,16 +1,13 @@
 import tensorflow as tf
 from tensorflow.keras import layers
+
 try:
     import tensorflow_addons as tfa
     NormLayer = tfa.layers.InstanceNormalization
-except ImportError:
-    # fallback to BatchNorm if addons not installed
+except:
     NormLayer = layers.BatchNormalization
 
 
-# ===========================
-# Residual Block
-# ===========================
 def residual_block(x, filters):
     y = layers.Conv2D(filters, 3, padding="same")(x)
     y = NormLayer()(y)
@@ -20,13 +17,9 @@ def residual_block(x, filters):
     return layers.add([x, y])
 
 
-# ===========================
-# Generator: ResNet-style (CycleGAN)
-# ===========================
-def build_generator(image_size=256, channels=4, n_blocks=9):
-    inputs = layers.Input(shape=(image_size, image_size, channels))
+def build_generator(image_size=256, in_channels=4, out_channels=3, n_blocks=9):
+    inputs = layers.Input(shape=(image_size, image_size, in_channels))
 
-    # Downsampling
     x = layers.Conv2D(64, 7, strides=1, padding="same")(inputs)
     x = NormLayer()(x)
     x = layers.ReLU()(x)
@@ -39,31 +32,25 @@ def build_generator(image_size=256, channels=4, n_blocks=9):
     x = NormLayer()(x)
     x = layers.ReLU()(x)
 
-    # Residual blocks
     for _ in range(n_blocks):
         x = residual_block(x, 256)
 
-    # Upsampling (use resize + conv to avoid checkerboard artifacts)
-    x = layers.UpSampling2D(size=(2, 2), interpolation="nearest")(x)
-    x = layers.Conv2D(128, 3, strides=1, padding="same")(x)
+    x = layers.UpSampling2D(size=(2, 2))(x)
+    x = layers.Conv2D(128, 3, padding="same")(x)
     x = NormLayer()(x)
     x = layers.ReLU()(x)
 
-    x = layers.UpSampling2D(size=(2, 2), interpolation="nearest")(x)
-    x = layers.Conv2D(64, 3, strides=1, padding="same")(x)
+    x = layers.UpSampling2D(size=(2, 2))(x)
+    x = layers.Conv2D(64, 3, padding="same")(x)
     x = NormLayer()(x)
     x = layers.ReLU()(x)
 
-    # Output layer
-    x = layers.Conv2D(channels, 7, strides=1, padding="same")(x)
+    x = layers.Conv2D(out_channels, 7, padding="same")(x)
     outputs = layers.Activation("tanh")(x)
 
     return tf.keras.Model(inputs, outputs, name="Generator")
 
 
-# ===========================
-# Discriminator: PatchGAN
-# ===========================
 def build_discriminator(image_size=256, channels=3):
     inputs = layers.Input(shape=(image_size, image_size, channels))
 
@@ -82,7 +69,6 @@ def build_discriminator(image_size=256, channels=3):
     x = NormLayer()(x)
     x = layers.LeakyReLU(0.2)(x)
 
-    # Output PatchGAN map (no sigmoid for LSGAN)
     outputs = layers.Conv2D(1, 4, strides=1, padding="same")(x)
 
     return tf.keras.Model(inputs, outputs, name="Discriminator")
