@@ -35,25 +35,22 @@ def get_dataset_with_mask(image_pattern, mask_pattern, batch_size=4, img_size=25
     mask_files  = sorted(glob.glob(mask_pattern))
 
     if len(image_files) == 0:
-        raise ValueError(f"No images found for pattern: {image_pattern}")
+        raise ValueError(f"No images found for: {image_pattern}")
     if len(mask_files) == 0:
-        raise ValueError(f"No mask images found for pattern: {mask_pattern}")
+        raise ValueError(f"No masks found for: {mask_pattern}")
 
     if len(image_files) != len(mask_files):
-        print("Warning: image and mask counts differ. Using sorted order pairing.")
+        print("Warning: image and mask counts differ. Pairing by sorted index.")
 
-    paired = list(zip(image_files, mask_files))
-    random.shuffle(paired)
-
-    ds = tf.data.Dataset.from_tensor_slices(paired)
+    ds = tf.data.Dataset.from_tensor_slices((image_files, mask_files))
 
     def _load_pair(img_path, mask_path):
-        img = load_image(img_path, img_size)
-        msk = load_mask(mask_path, img_size)
-        return tf.concat([img, msk], axis=-1)
+        img = load_image(img_path, img_size)      # (H,W,3)
+        msk = load_mask(mask_path, img_size)      # (H,W,1)
+        return tf.concat([img, msk], axis=-1)     # (H,W,4)
 
-    ds = ds.map(lambda a, b: _load_pair(a, b), num_parallel_calls=tf.data.AUTOTUNE)
-    ds = ds.shuffle(buffer_size=max(100, len(paired)))
+    ds = ds.map(_load_pair, num_parallel_calls=tf.data.AUTOTUNE)
+    ds = ds.shuffle(buffer_size=max(100, len(image_files)))
     ds = ds.batch(batch_size).prefetch(tf.data.AUTOTUNE)
     return ds
 
